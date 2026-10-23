@@ -1,0 +1,615 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Guardrail</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: full-bleed header and footer bands; between them a left rail of round-icon tool buttons and one centered column holding the active tool. Grey ground, black pill buttons, one green accent. */
+:root {
+  --bg: #ebebef;
+  --surface: #ffffff;
+  --ink: #17171a;
+  --muted: #5f5f68;
+  --line: #d9d9df;
+  --chip: #dcdce1;
+  --accent: #178a47;
+  --accent-ink: #ffffff;
+  --warn: #c0701f;
+  --code-bg: #f6f6f8;
+  --font: "Inter Tight", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --gut: clamp(16px, 4vw, 70px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111114; --surface: #1c1c21; --ink: #f1f1f4; --muted: #9a9aa4; --line: #2b2b32; --chip: #2a2a31;
+    --accent: #3dce86; --accent-ink: #06150c; --warn: #e49a4d; --code-bg: #141418;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111114; --surface: #1c1c21; --ink: #f1f1f4; --muted: #9a9aa4; --line: #2b2b32; --chip: #2a2a31;
+  --accent: #3dce86; --accent-ink: #06150c; --warn: #e49a4d; --code-bg: #141418;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 17px; line-height: 1.5; margin: 0; position: relative; min-height: 100%; }
+body::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--ink); }
+.wrap { max-width: 1840px; margin: 0 auto; padding-left: max(var(--gut), env(safe-area-inset-left, 0px)); padding-right: max(var(--gut), env(safe-area-inset-right, 0px)); }
+a { color: inherit; }
+button, select, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+svg.i { width: 1.35em; height: 1.35em; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* header */
+.hband { border-bottom: 1px solid var(--line); padding-top: 3px; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 100px; }
+.brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 700; font-size: 2rem; letter-spacing: -0.045em; }
+.brand svg { color: var(--accent); }
+.hdr-right { display: flex; align-items: center; gap: 6px; }
+.hbtn { border: 0; background: transparent; color: var(--muted); height: 44px; min-width: 44px; padding: 0 12px; border-radius: 12px; cursor: pointer; font-weight: 500; font-size: 0.95rem; display: grid; place-items: center; text-decoration: none; }
+.hbtn:hover { color: var(--ink); background: var(--chip); }
+.hbtn[aria-current="page"] { color: var(--ink); }
+
+/* shared */
+.btn { background: var(--ink); color: var(--bg); border: 0; border-radius: 999px; padding: 14px 24px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; font-size: 1rem; }
+.btn:hover { opacity: 0.88; }
+.btn.ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); padding: 10px 18px; font-size: 0.92rem; }
+.center { max-width: 640px; margin: 0 auto; text-align: center; }
+h1.title { font-size: clamp(2rem, 4.4vw, 2.7rem); line-height: 1.08; letter-spacing: -0.045em; font-weight: 700; margin: 0 0 18px; text-wrap: balance; }
+.center p { margin: 0 0 14px; font-size: 1.08rem; text-wrap: pretty; }
+.center p.soft { color: var(--muted); }
+
+/* home */
+.hero { padding-block: clamp(56px, 10vw, 120px) 56px; }
+.hero h1.title { font-size: clamp(2.4rem, 6.4vw, 4.3rem); line-height: 1.02; }
+.cta-row { display: flex; gap: 16px; justify-content: center; align-items: center; flex-wrap: wrap; margin-top: 28px; }
+.free { color: var(--muted); font-weight: 500; }
+.stages { max-width: 1000px; margin: 0 auto; padding-bottom: 72px; }
+.stages h2 { font-size: 1.25rem; letter-spacing: -0.02em; margin: 0 0 4px; text-align: center; }
+.stages .sub { color: var(--muted); text-align: center; margin: 0 0 24px; font-size: 0.98rem; }
+.stage-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.stg { background: var(--surface); border-radius: 18px; padding: 16px 16px 18px; }
+.stg b { display: block; letter-spacing: -0.02em; margin-bottom: 4px; }
+.stg span { color: var(--muted); font-size: 0.9rem; line-height: 1.35; display: block; }
+.stg .bar { height: 4px; width: 28px; border-radius: 4px; background: var(--accent); margin-bottom: 12px; }
+
+/* tools layout */
+.tools { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 40px; padding-block: 56px 80px; align-items: start; }
+.rail { display: grid; gap: 6px; min-width: 0; }
+.rail h3 { font-size: 0.92rem; font-weight: 700; margin: 26px 0 6px 12px; letter-spacing: -0.01em; }
+.nav { display: flex; align-items: center; gap: 16px; padding: 9px 12px; border-radius: 20px; border: 0; background: transparent; cursor: pointer; text-align: left; font-size: 1.18rem; letter-spacing: -0.02em; width: 100%; }
+.nav .ic { width: 46px; height: 46px; border-radius: 50%; background: var(--chip); display: grid; place-items: center; flex: none; color: var(--ink); }
+.nav:hover:not(:disabled):not([aria-current="true"]) .ic { filter: brightness(0.95); }
+.nav[aria-current="true"] { background: var(--surface); font-weight: 600; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); }
+.nav[aria-current="true"] .ic { background: var(--ink); color: var(--bg); }
+.nav:disabled { cursor: default; color: var(--ink); }
+.nav:disabled .ic { color: var(--muted); }
+.nav .lab { min-width: 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.new { background: var(--accent); color: var(--accent-ink); font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; letter-spacing: 0.03em; }
+.stage-col { min-width: 0; padding-top: 34px; }
+
+/* panel */
+.seg { display: inline-flex; background: var(--chip); border-radius: 999px; padding: 3px; margin: 8px 0 24px; }
+.seg.in { margin: 0; }
+.seg button { border: 0; background: transparent; padding: 8px 20px; border-radius: 999px; cursor: pointer; color: var(--muted); font-weight: 500; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.card { background: var(--surface); border-radius: 24px; padding: clamp(18px, 4vw, 32px); max-width: 700px; margin: 0 auto; text-align: left; }
+.card.wide { max-width: 920px; }
+
+/* checklist */
+.summary { display: grid; gap: 14px; padding-bottom: 22px; margin-bottom: 8px; border-bottom: 1px solid var(--line); }
+.score-row { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.score { font-size: clamp(2.6rem, 8vw, 3.6rem); font-weight: 700; letter-spacing: -0.05em; line-height: 1; font-variant-numeric: tabular-nums; }
+.score-label { font-weight: 600; font-size: 1.1rem; }
+.score-count { color: var(--muted); }
+.meter { height: 10px; background: var(--chip); border-radius: 999px; overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--accent); border-radius: 999px; transition: width 0.3s ease; }
+.next { background: var(--bg); border-radius: 16px; padding: 14px 16px; }
+.next b { display: block; font-size: 0.9rem; margin-bottom: 6px; }
+.next ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 0.95rem; }
+.grp { margin-top: 24px; }
+.grp h3 { font-size: 0.82rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; font-weight: 600; }
+.item { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.item:last-child { border-bottom: 0; }
+.item input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--accent); margin: 2px 0 0; cursor: pointer; }
+.item label { cursor: pointer; font-weight: 500; letter-spacing: -0.01em; display: block; }
+.item details { margin-top: 2px; }
+.item summary { cursor: pointer; color: var(--muted); font-size: 0.85rem; width: fit-content; }
+.item details p { color: var(--muted); font-size: 0.92rem; margin: 6px 0 0; }
+.foot-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 22px; flex-wrap: wrap; }
+.foot-row span { color: var(--muted); font-size: 0.88rem; }
+
+/* builder */
+.opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-bottom: 18px; }
+.opt { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 10px; background: var(--bg); border-radius: 16px; padding: 12px 14px; cursor: pointer; }
+.opt input { width: 20px; height: 20px; accent-color: var(--accent); margin-top: 2px; cursor: pointer; }
+.opt b { display: block; font-weight: 600; letter-spacing: -0.01em; }
+.opt span { color: var(--muted); font-size: 0.86rem; line-height: 1.35; display: block; }
+.row2 { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
+.row2 label { font-weight: 500; font-size: 0.92rem; }
+.sel { background: var(--bg); border: 1px solid transparent; border-radius: 999px; height: 44px; padding: 0 16px; cursor: pointer; }
+.codewrap { position: relative; }
+pre.code { margin: 0; background: var(--code-bg); border: 1px solid var(--line); border-radius: 16px; padding: 18px; overflow-x: auto; font-family: var(--mono); font-size: 0.82rem; line-height: 1.55; max-height: 520px; overflow-y: auto; }
+.codebar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+.codebar b { font-weight: 600; }
+.after { margin-top: 18px; background: var(--bg); border-radius: 16px; padding: 14px 18px; }
+.after b { display: block; margin-bottom: 6px; }
+.after ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 0.95rem; }
+.after li { margin-bottom: 4px; }
+
+/* map */
+.filters { display: grid; gap: 12px; margin-bottom: 16px; }
+.search { width: 100%; height: 48px; border-radius: 999px; border: 1px solid transparent; background: var(--bg); padding: 0 20px; }
+.search:focus-visible { outline: none; border-color: var(--ink); }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { border: 0; background: var(--bg); border-radius: 999px; padding: 6px 14px; cursor: pointer; font-size: 0.88rem; color: var(--muted); font-weight: 500; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.tbl-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 560px; }
+th { text-align: left; font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+td { padding: 11px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+td.need { font-weight: 600; letter-spacing: -0.01em; }
+td.need small { display: block; font-weight: 400; color: var(--muted); font-size: 0.8rem; }
+.count { color: var(--muted); font-size: 0.88rem; margin: 10px 0 0; }
+.empty { padding: 28px 10px; text-align: center; color: var(--muted); }
+
+/* footer */
+.fband { border-top: 1px solid var(--line); }
+footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; min-height: 100px; color: var(--muted); font-size: 0.92rem; padding-block: 20px; }
+footer b { color: var(--ink); font-weight: 500; }
+
+@media (max-width: 900px) {
+  header { height: 76px; }
+  .brand { font-size: 1.6rem; }
+  .tools { grid-template-columns: minmax(0, 1fr); gap: 8px; padding-block: 24px 56px; }
+  .rail { display: flex; overflow-x: auto; gap: 8px; padding-bottom: 6px; }
+  .rail h3 { display: none; }
+  .nav { width: auto; white-space: nowrap; font-size: 1rem; gap: 10px; padding: 6px 14px 6px 6px; background: var(--surface); }
+  .nav .ic { width: 36px; height: 36px; }
+  .nav[aria-current="true"] { box-shadow: inset 0 0 0 2px var(--ink); }
+  .stage-col { padding-top: 20px; }
+}
+@media (prefers-reduced-motion: reduce) { .meter i { transition: none; } }
+</style>
+
+<div class="hband"><div class="wrap">
+  <header>
+    <a class="brand" href="#home" aria-label="Guardrail home">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
+      Guardrail
+    </a>
+    <div class="hdr-right">
+      <a class="hbtn" id="nav-tools" href="#tools">Tools</a>
+      <!-- Replace the href below with your own page, for example https://buymeacoffee.com/yourname -->
+      <a class="hbtn" href="https://buymeacoffee.com" target="_blank" rel="noopener noreferrer" aria-label="Buy me a coffee" title="Buy me a coffee">
+        <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM16 10h2a2 2 0 0 1 0 4h-2M7 3v2M11 3v2"/></svg>
+      </a>
+      <button class="hbtn" id="theme" type="button" aria-label="Switch between light and dark theme">
+        <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/></svg>
+      </button>
+    </div>
+  </header>
+</div></div>
+
+<main id="view-home">
+  <div class="wrap">
+    <section class="hero center">
+      <h1 class="title">Ship fast. Keep it safe.</h1>
+      <p class="soft">Practical DevSecOps, one question at a time. Check your CI/CD pipeline, set a security baseline on AWS or Azure, and generate a hardened workflow you can paste into your repo. No sign-up, nothing to buy.</p>
+      <div class="cta-row"><a class="btn" href="#tools">Open the tools</a><span class="free">Free.</span></div>
+    </section>
+    <section class="stages" aria-labelledby="stg-h">
+      <h2 id="stg-h">Where security fits in a pipeline</h2>
+      <p class="sub">One check at each stage, so problems are cheap to fix.</p>
+      <div class="stage-grid">
+        <div class="stg"><div class="bar"></div><b>Code</b><span>Branch protection, secret scanning, verified commits</span></div>
+        <div class="stg"><div class="bar"></div><b>Build</b><span>Dependency review, static analysis, pinned actions</span></div>
+        <div class="stg"><div class="bar"></div><b>Test</b><span>Image scan, infrastructure code checks</span></div>
+        <div class="stg"><div class="bar"></div><b>Release</b><span>SBOM, signed artifacts, version pinning</span></div>
+        <div class="stg"><div class="bar"></div><b>Deploy</b><span>Short-lived OIDC credentials, approval gate</span></div>
+        <div class="stg"><div class="bar"></div><b>Run</b><span>Audit logs, threat detection, drift alerts</span></div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<main id="view-tools" hidden>
+  <div class="wrap">
+    <div class="tools">
+      <nav class="rail" aria-label="Tools" id="rail"></nav>
+      <section class="stage-col" id="stage"></section>
+    </div>
+  </div>
+</main>
+
+<div class="fband"><div class="wrap">
+  <footer>
+    <b>© 2026 Guardrail</b>
+    <span>Guidance for learning and review. Check settings against your own policies and your provider's current documentation.</span>
+  </footer>
+</div></div>
+
+<script>
+/*GEN*/
+function genWorkflow(o) {
+  var L = [
+    '# Pin every "uses:" line to a full commit SHA before you rely on this file.',
+    'name: secure-ci',
+    'on:',
+    '  pull_request:',
+    '  push:',
+    '    branches: [main]',
+    '',
+    'permissions:',
+    '  contents: read',
+    '',
+    'jobs:'
+  ];
+  var needs = [];
+  if (o.secrets) {
+    needs.push('secret-scan');
+    L.push('  secret-scan:', '    runs-on: ubuntu-latest', '    steps:',
+      '      - uses: actions/checkout@v4', '        with:', '          fetch-depth: 0',
+      '      - uses: gitleaks/gitleaks-action@v2', '        env:',
+      '          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}',
+      '          # Organization repos also need: GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}', '');
+  }
+  if (o.codeql) {
+    needs.push('codeql');
+    var compiled = ['java-kotlin', 'csharp', 'go'].indexOf(o.lang) >= 0;
+    L.push('  codeql:', '    runs-on: ubuntu-latest', '    permissions:', '      security-events: write', '      contents: read', '      actions: read',
+      '    steps:', '      - uses: actions/checkout@v4', '      - uses: github/codeql-action/init@v3', '        with:', '          languages: ' + o.lang);
+    if (compiled) L.push('      - uses: github/codeql-action/autobuild@v3');
+    L.push('      - uses: github/codeql-action/analyze@v3', '');
+  }
+  if (o.deps) {
+    L.push('  dependency-review:', "    if: github.event_name == 'pull_request'", '    runs-on: ubuntu-latest', '    steps:',
+      '      - uses: actions/checkout@v4', '      - uses: actions/dependency-review-action@v4', '');
+  }
+  if (o.image) {
+    needs.push('image');
+    L.push('  image:', '    runs-on: ubuntu-latest', '    steps:', '      - uses: actions/checkout@v4',
+      '      - name: Build image', '        run: docker build -t app:${{ github.sha }} .',
+      '      - name: Scan image', '        uses: aquasecurity/trivy-action@0.28.0', '        with:',
+      '          image-ref: app:${{ github.sha }}', '          severity: CRITICAL,HIGH', "          exit-code: '1'", "          ignore-unfixed: true");
+    if (o.sbom) L.push('      - name: Generate SBOM', '        uses: anchore/sbom-action@v0', '        with:', '          image: app:${{ github.sha }}');
+    L.push('');
+  } else if (o.sbom) {
+    needs.push('sbom');
+    L.push('  sbom:', '    runs-on: ubuntu-latest', '    steps:', '      - uses: actions/checkout@v4',
+      '      - name: Generate SBOM', '        uses: anchore/sbom-action@v0', '        with:', '          path: .', '');
+  }
+  if (o.cloud !== 'none') {
+    L.push('  deploy:', "    if: github.ref == 'refs/heads/main' && github.event_name == 'push'");
+    if (needs.length) L.push('    needs: [' + needs.join(', ') + ']');
+    L.push('    runs-on: ubuntu-latest', '    # Add required reviewers to the "production" environment in repo settings.', '    environment: production',
+      '    permissions:', '      id-token: write', '      contents: read', '    steps:', '      - uses: actions/checkout@v4');
+    if (o.cloud === 'aws') {
+      L.push('      - uses: aws-actions/configure-aws-credentials@v4', '        with:',
+        '          role-to-assume: arn:aws:iam::123456789012:role/github-deploy', '          aws-region: eu-west-1',
+        '      - name: Confirm identity', '        run: aws sts get-caller-identity');
+    } else {
+      L.push('      - uses: azure/login@v2', '        with:',
+        '          client-id: ${{ vars.AZURE_CLIENT_ID }}', '          tenant-id: ${{ vars.AZURE_TENANT_ID }}', '          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}',
+        '      - name: Confirm identity', '        run: az account show');
+    }
+    L.push('');
+  }
+  if (L[L.length - 1] === '') L.pop();
+  if (!needs.length && o.cloud === 'none') L.push('  placeholder:', '    runs-on: ubuntu-latest', '    steps:', '      - run: echo "Pick at least one check above"');
+  return L.join('\n') + '\n';
+}
+/*ENDGEN*/
+
+(function () {
+  var $ = function (s) { return document.querySelector(s); };
+  var state = { view: 'home', tool: 'pipe', seg: { cloud: 'aws' }, checks: {}, opts: { lang: 'javascript-typescript', codeql: true, secrets: true, deps: true, image: false, sbom: false, cloud: 'aws' }, q: '', cat: 'All' };
+
+  var ICONS = {
+    shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+    cloud: '<path d="M7 18a4 4 0 0 1-.5-8A6 6 0 0 1 18 9.5 4.5 4.5 0 0 1 17.5 18z"/>',
+    flow: '<path d="M5 5h5v5H5zM14 14h5v5h-5zM10 7.5h4a2 2 0 0 1 2 2V14"/>',
+    swap: '<path d="M7 7h12l-3-3M17 17H5l3 3"/>',
+    box: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/>',
+    file: '<path d="M7 3h7l5 5v13H7zM14 3v5h5"/>',
+    target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+    key: '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>'
+  };
+  function icon(n) { return '<svg class="i" viewBox="0 0 24 24" aria-hidden="true">' + ICONS[n] + '</svg>'; }
+
+  var PIPE = [
+    { name: 'Source and access', items: [
+      { id: 'branch', t: 'Require pull requests and reviews on the main branch', why: 'One stolen account then cannot push code straight to production.' },
+      { id: 'mfa', t: 'Enforce MFA or SSO for every contributor', why: 'Most repository and cloud takeovers start with a reused or phished password.' },
+      { id: 'signed', t: 'Require verified commits on protected branches', why: 'It shows who really wrote a change.' }
+    ] },
+    { name: 'Secrets', items: [
+      { id: 'scan', t: 'Scan for secrets on every push', why: 'Keys committed to public repositories get picked up by bots very quickly.' },
+      { id: 'oidc', t: 'Use short-lived cloud credentials (OIDC) instead of stored keys', why: 'A leaked token expires on its own. A stored access key does not.' },
+      { id: 'scope', t: 'Scope secrets per environment and rotate them', why: 'A leak in staging should never open production.' }
+    ] },
+    { name: 'Pipeline', items: [
+      { id: 'perms', t: 'Make the default workflow token read-only', why: 'Each job then asks for only the permissions it needs.' },
+      { id: 'pin', t: 'Pin third-party actions to a commit SHA', why: 'A tag can be moved to malicious code. A commit SHA cannot.' },
+      { id: 'approve', t: 'Require approval before deploying to production', why: 'It adds a human check on the last step.' },
+      { id: 'runners', t: 'Use ephemeral, isolated runners', why: 'Nothing from one job should survive into the next.' }
+    ] },
+    { name: 'Build and artifacts', items: [
+      { id: 'sca', t: 'Check dependencies for known vulnerabilities and commit lockfiles', why: 'Most of your code is other people\'s code.' },
+      { id: 'sast', t: 'Run static analysis (SAST) on every pull request', why: 'Catches whole classes of bugs before review.' },
+      { id: 'image', t: 'Scan container images and use minimal base images', why: 'Fewer packages means fewer things to patch.' },
+      { id: 'sbom', t: 'Generate an SBOM and sign build artifacts', why: 'It lets you answer "are we affected?" quickly and prove what you shipped.' }
+    ] },
+    { name: 'Deploy and run', items: [
+      { id: 'iac', t: 'Scan infrastructure code before it is applied', why: 'Open storage and wide-open firewall rules are cheaper to catch in a pull request.' },
+      { id: 'role', t: 'Give the deploy role least privilege', why: 'A compromised pipeline can only change what its role allows.' },
+      { id: 'logs', t: 'Keep audit logs and alert on unusual changes', why: 'You cannot investigate what you did not record.' }
+    ] }
+  ];
+  var CLOUD = {
+    aws: [
+      { name: 'Identity', items: [
+        { id: 'root', t: 'Turn on MFA for the root user and delete its access keys', why: 'The root user can do everything and cannot be limited by policies.' },
+        { id: 'sso', t: 'Sign in through IAM Identity Center with role-based access', why: 'No long-lived IAM user passwords to leak.' },
+        { id: 'wild', t: 'Review policies for wildcard actions and resources (*)', why: 'Broad policies turn a small mistake into a large one.' }
+      ] },
+      { name: 'Logging and detection', items: [
+        { id: 'trail', t: 'Enable an organization CloudTrail in all regions with log file validation', why: 'It is your record of who did what in the account.' },
+        { id: 'guard', t: 'Turn on GuardDuty and Security Hub', why: 'Threat detection and a single view of findings.' }
+      ] },
+      { name: 'Network', items: [
+        { id: 'sg', t: 'Close SSH (22) and RDP (3389) to 0.0.0.0/0', why: 'Open admin ports are scanned constantly.' },
+        { id: 'priv', t: 'Keep databases and workloads in private subnets', why: 'No direct route from the internet.' }
+      ] },
+      { name: 'Data and secrets', items: [
+        { id: 's3', t: 'Enable S3 Block Public Access at the account level', why: 'One setting prevents accidental public buckets.' },
+        { id: 'kms', t: 'Encrypt storage with KMS and turn on key rotation', why: 'Gives you control and an audit trail for key use.' },
+        { id: 'sm', t: 'Keep secrets in Secrets Manager or SSM Parameter Store, never in code', why: 'Secrets in code end up in every clone and log.' }
+      ] },
+      { name: 'Governance', items: [
+        { id: 'scp', t: 'Use separate accounts per environment with Service Control Policies', why: 'Limits how far a mistake or a breach can spread.' },
+        { id: 'cfg', t: 'Run AWS Config rules to flag drift and public resources', why: 'Settings drift over time. Rules notice.' }
+      ] }
+    ],
+    azure: [
+      { name: 'Identity', items: [
+        { id: 'mfa', t: 'Require MFA with Conditional Access for all users', why: 'Stops most password-only attacks.' },
+        { id: 'pim', t: 'Use Privileged Identity Management for admin roles', why: 'Admin rights are granted for a short time, not forever.' },
+        { id: 'rbac', t: 'Assign RBAC roles at the narrowest scope and avoid Owner', why: 'A role on one resource group cannot touch the rest.' }
+      ] },
+      { name: 'Logging and detection', items: [
+        { id: 'log', t: 'Send the Activity Log and diagnostic settings to a Log Analytics workspace', why: 'Central, searchable records of changes and access.' },
+        { id: 'def', t: 'Turn on Defender for Cloud plans for what you run', why: 'Threat detection and posture recommendations.' }
+      ] },
+      { name: 'Network', items: [
+        { id: 'nsg', t: 'Block inbound SSH (22) and RDP (3389) from the internet and use Azure Bastion', why: 'Admin access without open ports.' },
+        { id: 'pe', t: 'Use Private Endpoints for storage, databases and Key Vault', why: 'Traffic stays on your private network.' }
+      ] },
+      { name: 'Data and secrets', items: [
+        { id: 'blob', t: 'Disable public blob access and require secure transfer on storage accounts', why: 'Prevents accidental public data and plain HTTP.' },
+        { id: 'kv', t: 'Keep secrets in Key Vault with RBAC, soft delete and purge protection', why: 'A deleted secret can be recovered. Access is audited.' },
+        { id: 'cmk', t: 'Use customer-managed keys where your rules require them', why: 'You control rotation and revocation.' }
+      ] },
+      { name: 'Governance', items: [
+        { id: 'mg', t: 'Use management groups and separate subscriptions per environment', why: 'Limits the blast radius and simplifies access.' },
+        { id: 'pol', t: 'Assign Azure Policy initiatives to flag drift and public resources', why: 'Rules apply to every new resource automatically.' }
+      ] }
+    ]
+  };
+
+  var MAP = [
+    ['Identity', 'People sign-in and SSO', 'IAM Identity Center', 'Microsoft Entra ID'],
+    ['Identity', 'Roles and permissions', 'IAM roles and policies', 'Azure RBAC role assignments'],
+    ['Identity', 'Short-lived admin access', 'IAM Identity Center with short sessions', 'Privileged Identity Management (PIM)'],
+    ['Logging & detection', 'API activity audit', 'AWS CloudTrail', 'Azure Activity Log'],
+    ['Logging & detection', 'Central logs and queries', 'Amazon CloudWatch Logs', 'Azure Monitor Logs (Log Analytics)'],
+    ['Logging & detection', 'Threat detection', 'Amazon GuardDuty', 'Microsoft Defender for Cloud'],
+    ['Logging & detection', 'Security posture view', 'AWS Security Hub', 'Defender for Cloud (CSPM)'],
+    ['Logging & detection', 'SIEM', 'Security Lake plus your SIEM', 'Microsoft Sentinel'],
+    ['Network', 'Private network', 'Amazon VPC', 'Azure Virtual Network'],
+    ['Network', 'Traffic rules', 'Security groups and network ACLs', 'Network security groups (NSGs)'],
+    ['Network', 'Web application firewall', 'AWS WAF', 'Azure WAF (Front Door or Application Gateway)'],
+    ['Network', 'Admin access without open ports', 'Systems Manager Session Manager', 'Azure Bastion'],
+    ['Network', 'Private access to services', 'VPC endpoints (PrivateLink)', 'Private Endpoints (Private Link)'],
+    ['Data & secrets', 'Object storage', 'Amazon S3', 'Azure Blob Storage'],
+    ['Data & secrets', 'Encryption keys', 'AWS KMS', 'Azure Key Vault (keys)'],
+    ['Data & secrets', 'Secret storage', 'AWS Secrets Manager', 'Azure Key Vault (secrets)'],
+    ['CI/CD', 'Hosted pipelines', 'AWS CodePipeline and CodeBuild', 'Azure Pipelines (Azure DevOps)'],
+    ['CI/CD', 'Pipeline login without stored keys', 'IAM role through OIDC', 'Workload identity federation'],
+    ['Containers', 'Container registry', 'Amazon ECR', 'Azure Container Registry (ACR)'],
+    ['Containers', 'Managed Kubernetes', 'Amazon EKS', 'Azure Kubernetes Service (AKS)'],
+    ['IaC & policy', 'Native infrastructure as code', 'AWS CloudFormation', 'Bicep and ARM templates'],
+    ['IaC & policy', 'Guardrail rules', 'AWS Config and Service Control Policies', 'Azure Policy'],
+    ['IaC & policy', 'Organization structure', 'AWS Organizations (accounts)', 'Management groups and subscriptions']
+  ];
+  var CATS = ['All', 'Identity', 'Logging & detection', 'Network', 'Data & secrets', 'CI/CD', 'Containers', 'IaC & policy'];
+
+  var TOOLS = {
+    pipe: { name: 'Is my pipeline safe?', icon: 'shield', isNew: true, type: 'check', prefix: 'p',
+      intro: 'Tick what your CI/CD pipeline already does. You get a score and the next fixes worth making first.',
+      groups: function () { return PIPE; } },
+    cloud: { name: 'Is my cloud safe?', icon: 'cloud', type: 'check', prefix: 'c', segs: [['aws', 'AWS'], ['azure', 'Azure']],
+      intro: 'A baseline of settings to review on a new or existing account. Pick your provider and tick what is done.',
+      groups: function () { return CLOUD[state.seg.cloud]; } },
+    flow: { name: 'Build me a workflow', icon: 'flow', type: 'build',
+      intro: 'Choose the checks you want and get a GitHub Actions workflow with read-only permissions and keyless cloud login.' },
+    map: { name: 'AWS or Azure?', icon: 'swap', type: 'map',
+      intro: 'The same security and DevOps need, named on both clouds. Names line up on purpose, not feature for feature.' }
+  };
+  var SOON = [['Kubernetes hardening?', 'box'], ['Terraform checks?', 'file'], ['Threat model?', 'target'], ['Leaked a key?', 'key']];
+
+  // ---- helpers ----
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function loadChecks() { try { state.checks = JSON.parse(localStorage.getItem('guardrail-checks') || '{}') || {}; } catch (e) { state.checks = {}; } }
+  function saveChecks() { try { localStorage.setItem('guardrail-checks', JSON.stringify(state.checks)); } catch (e) {} }
+  function ckey(t, id) { var p = t.prefix === 'c' ? 'c:' + state.seg.cloud + ':' : 'p:'; return p + id; }
+
+  // ---- rail ----
+  function renderRail() {
+    $('#rail').innerHTML =
+      Object.keys(TOOLS).map(function (id) {
+        var t = TOOLS[id];
+        return '<button type="button" class="nav" data-tool="' + id + '" aria-current="' + (state.tool === id) + '"><span class="ic">' + icon(t.icon) + '</span><span class="lab">' + t.name + (t.isNew ? '<span class="new">NEW</span>' : '') + '</span></button>';
+      }).join('') +
+      '<h3>Not built yet</h3>' +
+      SOON.map(function (s) { return '<button type="button" class="nav" disabled><span class="ic">' + icon(s[1]) + '</span><span class="lab">' + s[0] + '</span></button>'; }).join('') +
+      '<button type="button" class="nav" data-tool="suggest" aria-current="' + (state.tool === 'suggest') + '" style="margin-top:14px"><span class="ic">' + icon('plus') + '</span><span class="lab">Suggest a tool</span></button>';
+  }
+
+  // ---- checklist ----
+  function summaryHTML(t) {
+    var groups = t.groups(), total = 0, done = 0, missing = [];
+    groups.forEach(function (g) { g.items.forEach(function (it) { total++; if (state.checks[ckey(t, it.id)]) done++; else missing.push(it.t); }); });
+    var pct = total ? Math.round(done / total * 100) : 0;
+    var label = pct < 40 ? 'Needs work' : pct < 75 ? 'Getting there' : pct < 100 ? 'Solid' : 'Everything ticked';
+    var next = missing.slice(0, 3);
+    return '<div class="score-row"><span class="score">' + pct + '%</span><span class="score-label">' + label + '</span><span class="score-count">' + done + ' of ' + total + ' done</span></div>' +
+      '<div class="meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '" aria-label="Checklist progress"><i style="width:' + pct + '%"></i></div>' +
+      (next.length ? '<div class="next"><b>Do these next</b><ul>' + next.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul></div>' : '<div class="next"><b>Nothing left on this list.</b><span style="color:var(--muted);font-size:0.95rem">Review it again whenever your setup changes.</span></div>');
+  }
+  function checkCard(t) {
+    var groups = t.groups();
+    return '<div class="card"><div class="summary" id="sum">' + summaryHTML(t) + '</div>' +
+      groups.map(function (g) {
+        return '<div class="grp"><h3>' + g.name + '</h3>' + g.items.map(function (it) {
+          var k = ckey(t, it.id);
+          return '<div class="item"><input type="checkbox" id="k-' + k.replace(/:/g, '-') + '" data-k="' + k + '"' + (state.checks[k] ? ' checked' : '') + '><div><label for="k-' + k.replace(/:/g, '-') + '">' + esc(it.t) + '</label><details><summary>Why it matters</summary><p>' + esc(it.why) + '</p></details></div></div>';
+        }).join('') + '</div>';
+      }).join('') +
+      '<div class="foot-row"><span>Saved in this browser only.</span><button type="button" class="btn ghost" id="reset">Reset this list</button></div></div>';
+  }
+
+  // ---- builder ----
+  function builderCard() {
+    var o = state.opts;
+    var langs = [['javascript-typescript', 'JavaScript / TypeScript'], ['python', 'Python'], ['java-kotlin', 'Java / Kotlin'], ['csharp', 'C#'], ['go', 'Go']];
+    var opt = function (id, b, s) { return '<label class="opt"><input type="checkbox" data-opt="' + id + '"' + (o[id] ? ' checked' : '') + '><span><b>' + b + '</b><span>' + s + '</span></span></label>'; };
+    return '<div class="card wide">' +
+      '<div class="row2"><label for="lang">Language for code scanning</label><select class="sel" id="lang" data-opt="lang">' + langs.map(function (l) { return '<option value="' + l[0] + '"' + (o.lang === l[0] ? ' selected' : '') + '>' + l[1] + '</option>'; }).join('') + '</select></div>' +
+      '<div class="opts">' +
+      opt('secrets', 'Secret scan', 'Gitleaks over the full git history') +
+      opt('codeql', 'Code scan (SAST)', 'GitHub CodeQL, results in the Security tab') +
+      opt('deps', 'Dependency review', 'Blocks risky new dependencies in pull requests') +
+      opt('image', 'Container image scan', 'Builds your Dockerfile and scans it with Trivy') +
+      opt('sbom', 'SBOM', 'Software bill of materials with Syft') +
+      '</div>' +
+      '<div class="row2"><span style="font-weight:500;font-size:0.92rem">Deploy login</span><div class="seg in" role="group" aria-label="Deploy login">' +
+      [['none', 'None'], ['aws', 'AWS OIDC'], ['azure', 'Azure OIDC']].map(function (c) { return '<button type="button" data-cloud="' + c[0] + '" aria-pressed="' + (o.cloud === c[0]) + '">' + c[1] + '</button>'; }).join('') + '</div></div>' +
+      '<div class="codebar"><b>.github/workflows/secure-ci.yml</b><button type="button" class="btn ghost" id="copy">Copy workflow</button></div>' +
+      '<pre class="code" id="yaml" tabindex="0"></pre>' +
+      '<div class="after" id="after"></div></div>';
+  }
+  function updateBuilder() {
+    var o = state.opts;
+    $('#yaml').textContent = genWorkflow(o);
+    var tips = ['Save the file as .github/workflows/secure-ci.yml in your repository.', 'Replace the version tags with full commit SHAs. Tools such as Dependabot can keep them updated.'];
+    if (o.cloud === 'aws') tips.push('Create an IAM role whose trust policy accepts token.actions.githubusercontent.com and is limited to your repository and the main branch. Replace the example role ARN and region.');
+    if (o.cloud === 'azure') tips.push('Create a Microsoft Entra app registration with a federated credential for your repository and the production environment. Store its IDs as repository variables.');
+    if (o.cloud !== 'none') tips.push('Add required reviewers to the production environment so the deploy job waits for approval.');
+    if (o.secrets) tips.push('Gitleaks is free for personal repositories. Organization repositories need a licence key.');
+    $('#after').innerHTML = '<b>After you paste it</b><ul>' + tips.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>';
+    document.querySelectorAll('[data-cloud]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.cloud === o.cloud)); });
+  }
+
+  // ---- map ----
+  function mapCard() {
+    return '<div class="card wide"><div class="filters"><input class="search" id="q" type="search" placeholder="Search a service or need, for example logs or secrets" aria-label="Search services" value="' + esc(state.q) + '"><div class="chips" id="chips"></div></div><div id="tbl"></div></div>';
+  }
+  function updateMap() {
+    $('#chips').innerHTML = CATS.map(function (c) { return '<button type="button" class="chip" data-cat="' + esc(c) + '" aria-pressed="' + (state.cat === c) + '">' + esc(c) + '</button>'; }).join('');
+    var q = state.q.trim().toLowerCase();
+    var rows = MAP.filter(function (r) { return (state.cat === 'All' || r[0] === state.cat) && (!q || r.join(' ').toLowerCase().indexOf(q) >= 0); });
+    $('#tbl').innerHTML = rows.length
+      ? '<div class="tbl-scroll"><table><thead><tr><th>You need</th><th>AWS</th><th>Azure</th></tr></thead><tbody>' + rows.map(function (r) { return '<tr><td class="need">' + esc(r[1]) + '<small>' + esc(r[0]) + '</small></td><td>' + esc(r[2]) + '</td><td>' + esc(r[3]) + '</td></tr>'; }).join('') + '</tbody></table></div><p class="count">' + rows.length + ' of ' + MAP.length + ' shown</p>'
+      : '<p class="empty">Nothing matches. Try a shorter word, or choose All.</p>';
+  }
+
+  // ---- stage ----
+  function renderStage() {
+    if (state.tool === 'suggest') {
+      $('#stage').innerHTML = '<div class="center"><h1 class="title">Suggest a tool</h1><p>This site has no accounts or inbox yet, so ideas can\'t be collected here.</p><p class="soft">If you are building it with Claude, say which checklist or generator you want next and it will be added to the list.</p></div>';
+      return;
+    }
+    var t = TOOLS[state.tool];
+    var seg = t.segs ? '<div class="seg" role="group" aria-label="Provider">' + t.segs.map(function (s) { return '<button type="button" data-seg="' + s[0] + '" aria-pressed="' + (state.seg.cloud === s[0]) + '">' + s[1] + '</button>'; }).join('') + '</div>' : '';
+    var body = t.type === 'check' ? checkCard(t) : t.type === 'build' ? builderCard() : mapCard();
+    $('#stage').innerHTML = '<div class="center"><h1 class="title">' + t.name + '</h1><p>' + t.intro + '</p>' + seg + '</div>' + body;
+    if (t.type === 'build') updateBuilder();
+    if (t.type === 'map') updateMap();
+  }
+
+  // ---- events ----
+  var resetTimer = null;
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.tool) { state.tool = b.dataset.tool; renderRail(); renderStage(); }
+    else if (b.dataset.seg) { state.seg.cloud = b.dataset.seg; renderStage(); }
+    else if (b.dataset.cloud) { state.opts.cloud = b.dataset.cloud; updateBuilder(); }
+    else if (b.dataset.cat) { state.cat = b.dataset.cat; updateMap(); }
+    else if (b.id === 'theme') toggleTheme();
+    else if (b.id === 'copy') copyYaml(b);
+    else if (b.id === 'reset') {
+      if (b.dataset.armed) {
+        var t = TOOLS[state.tool];
+        t.groups().forEach(function (g) { g.items.forEach(function (it) { delete state.checks[ckey(t, it.id)]; }); });
+        saveChecks(); renderStage();
+      } else {
+        b.dataset.armed = '1'; b.textContent = 'Click again to clear';
+        clearTimeout(resetTimer);
+        resetTimer = setTimeout(function () { b.textContent = 'Reset this list'; delete b.dataset.armed; }, 3000);
+      }
+    }
+  });
+  document.addEventListener('change', function (e) {
+    var el = e.target;
+    if (el.dataset.k) {
+      if (el.checked) state.checks[el.dataset.k] = true; else delete state.checks[el.dataset.k];
+      saveChecks();
+      $('#sum').innerHTML = summaryHTML(TOOLS[state.tool]);
+    } else if (el.dataset.opt) {
+      state.opts[el.dataset.opt] = el.type === 'checkbox' ? el.checked : el.value;
+      updateBuilder();
+    }
+  });
+  document.addEventListener('input', function (e) {
+    if (e.target.id === 'q') { state.q = e.target.value; updateMap(); }
+  });
+
+  function copyYaml(btn) {
+    var text = genWorkflow(state.opts);
+    var done = function (msg) { btn.textContent = msg; setTimeout(function () { btn.textContent = 'Copy workflow'; }, 1800); };
+    var fallback = function () {
+      var r = document.createRange(); r.selectNodeContents($('#yaml'));
+      var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      done('Selected. Press Ctrl+C');
+    };
+    try { navigator.clipboard.writeText(text).then(function () { done('Copied'); }, fallback); } catch (x) { fallback(); }
+  }
+  function toggleTheme() {
+    var root = document.documentElement;
+    var dark = root.getAttribute('data-theme') === 'dark' || (!root.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    var next = dark ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('guardrail-theme', next); } catch (x) {}
+  }
+  function route() {
+    var h = (location.hash || '').replace('#', '');
+    state.view = h === 'tools' ? 'tools' : 'home';
+    $('#view-home').hidden = state.view !== 'home';
+    $('#view-tools').hidden = state.view !== 'tools';
+    var nt = $('#nav-tools');
+    if (state.view === 'tools') nt.setAttribute('aria-current', 'page'); else nt.removeAttribute('aria-current');
+    if (state.view === 'tools') { renderRail(); renderStage(); }
+    window.scrollTo(0, 0);
+  }
+  window.addEventListener('hashchange', route);
+
+  try { var th = localStorage.getItem('guardrail-theme'); if (th) document.documentElement.setAttribute('data-theme', th); } catch (x) {}
+  loadChecks();
+  route();
+})();
+</script>
+
+</body></html>
